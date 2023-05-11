@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useState } from "react";
-import { Position, Route, Stop } from "./types";
+import { Position, Route, Stop, Trip } from "./types";
 import TrainRoutes from "./train-routes";
 import {
   createPositionFromStrings,
@@ -9,23 +9,39 @@ import {
   removeDuplicateStops,
 } from "./utils";
 import Stops from "./stops";
-import { useRouter, useSearchParams } from "next/navigation";
+import {
+  ReadonlyURLSearchParams,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
+import Trips from "./trips";
+
 interface IProps {
   routes: Route[];
   stops: Stop[];
   trainRoutes: { route: Route; stops: Stop[] }[];
+  trips: Trip[];
 }
 
-
+function getParam(searchParams: ReadonlyURLSearchParams, key: string) {
+  const result = searchParams.get(key);
+  if (result) {
+    return result;
+  }
+}
 export default function HomePage({
   routes,
   stops,
   trainRoutes,
+  trips,
 }: IProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userRoute =searchParams.get("route");
-  const userCoords = createPositionFromStrings(searchParams.get("lat"), searchParams.get("lon"));
+  const userRoute = getParam(searchParams, "route");
+  const userCoords = createPositionFromStrings(
+    getParam(searchParams, "lat"),
+    getParam(searchParams, "lon")
+  );
   const [locationStatus, setLocationStatus] = useState<string>(
     userCoords ? "ok" : "init"
   );
@@ -65,8 +81,8 @@ export default function HomePage({
         </button>
         <div>
           <p className={`m-0 max-w-[30ch] text-sm opacity-90`}>
-            Latitude: {userCoords?.latitude} °, 
-            Longitude: {userCoords?.longitude} °
+            Latitude: {userCoords?.latitude} °, Longitude:{" "}
+            {userCoords?.longitude} °
           </p>
           {userCoords && (
             <Stops
@@ -77,12 +93,13 @@ export default function HomePage({
             />
           )}
         </div>
+        <TrainRoutes
+          trainRoutes={trainRoutes}
+          userCoords={userCoords}
+          userRoute={userRoute}
+        />
       </div>
-      <TrainRoutes
-        trainRoutes={trainRoutes}
-        userCoords={userCoords}
-        userRoute={userRoute}
-      />
+      <Trips trips={trips} />
     </main>
   );
 }

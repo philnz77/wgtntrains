@@ -77,16 +77,19 @@ export function getStopsDistances(
     .sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
-export function toNumber(str?: string | null) : number | undefined{
-  if(str) {
+export function toNumber(str?: string | null): number | undefined {
+  if (str) {
     const num = Number.parseFloat(str);
     if (!Number.isNaN(num)) {
       return num;
     }
   }
-} 
+}
 
-export function createPositionFromStrings(lat?: string | null, lon?: string | null) : Position | undefined {
+export function createPositionFromStrings(
+  lat?: string | null,
+  lon?: string | null
+): Position | undefined {
   const latitude = toNumber(lat);
   const longitude = toNumber(lon);
   if (latitude !== undefined && longitude !== undefined) {

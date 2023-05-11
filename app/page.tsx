@@ -1,8 +1,9 @@
 // Import your Client Component
 import HomePage from "./home-page";
-import { Position, Route, Stop } from "./types";
+import { Position, Route, Stop, Trip } from "./types";
 import { toNumber } from "./utils";
-
+import { formatInTimeZone } from "date-fns-tz";
+import { addHours, subHours } from "date-fns";
 function getMetlinkApiKey(): string {
   const apiKey = process.env.METLINK_API_KEY;
   if (apiKey) {
@@ -81,6 +82,23 @@ function getPositionFromSearchParams(
   }
 }
 
+function formatInNzIso(date: Date): string {
+  return formatInTimeZone(date, "NZ", "yyyy-MM-dd'T'HH:mm:ss");
+}
+
+async function getTrips(routeId: string): Promise<Trip[]> {
+  const now = new Date();
+  const earlier = subHours(now, 3);
+  const later = addHours(now, 1);
+  const tripsUrl = `https://api.opendata.metlink.org.nz/v1/gtfs/trips?route_id=${routeId}&start=${formatInNzIso(
+    earlier
+  )}&end=${formatInNzIso(later)}`;
+
+  const res = await fetch(tripsUrl, { headers: getMetlinkHeaders() });
+  const trips = await res.json();
+  return trips;
+}
+
 export default async function Page({
   searchParams,
 }: {
@@ -93,14 +111,18 @@ export default async function Page({
   const trainRoutes = routes.filter((route) => route.route_type === 2);
   const trainRoutesStops = await Promise.all(trainRoutes.map(getRouteStops));
   const stops = await stopsPromise;
-  // const route = getStringParam(searchParams, "route");
-  // const position = getPositionFromSearchParams(searchParams);
+  const route = getStringParam(searchParams, "route");
+  const routeId =
+    route && routes.find((r) => r.route_short_name === route)?.route_id;
+  //const position = getPositionFromSearchParams(searchParams);
+  const trips = routeId ? await getTrips(routeId) : [];
 
   return (
     <HomePage
       routes={routes}
       stops={stops}
       trainRoutes={trainRoutesStops}
+      trips={trips}
     />
   );
 }

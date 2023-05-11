@@ -25,3 +25,10 @@ export interface Position {
   latitude: number;
   longitude: number;
 }
+
+export interface Trip {
+  trip_id: string;
+  route_id: number;
+  shape_id: string;
+  direction_id: number;
+}
