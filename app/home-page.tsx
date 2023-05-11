@@ -8,6 +8,7 @@ import {
   removeDuplicateStops,
 } from "./utils";
 import Stops from "./stops";
+import { useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 interface IProps {
   routes: Route[];
@@ -27,6 +28,7 @@ export default function HomePage({
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  
   const [locationStatus, setLocationStatus] = useState<string>(
     position ? "ok" : "init"
   );
@@ -37,14 +39,12 @@ export default function HomePage({
     } else {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          // readonly latitude: number;
-          // readonly longitude: number;
           const { coords } = position;
           setLocationStatus("ok");
-          const params = new URLSearchParams(searchParams);
+          const params = new URLSearchParams(window.location.search);
           params.set("lat", String(coords.latitude));
           params.set("lon", String(coords.longitude));
-          router.push(`${pathname}?${params}`);
+          router.push(`${window.location.pathname}?${params}`);
         },
         () => setLocationStatus("error")
       );
