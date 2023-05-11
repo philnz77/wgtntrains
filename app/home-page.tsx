@@ -31,7 +31,6 @@ function getParam(searchParams: ReadonlyURLSearchParams, key: string) {
   }
 }
 
-
 export default function HomePage({
   routes,
   stops,
@@ -57,10 +56,12 @@ export default function HomePage({
         (position) => {
           const { coords } = position;
           setLocationStatus("ok");
-          router.push(urlWithOverriddenQueryParams({
-            lat: coords.latitude,
-            lon: coords.longitude
-          }));
+          router.push(
+            urlWithOverriddenQueryParams({
+              lat: coords.latitude,
+              lon: coords.longitude,
+            })
+          );
         },
         () => setLocationStatus("error")
       );
