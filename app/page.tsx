@@ -1,7 +1,6 @@
 // Import your Client Component
 import HomePage from "./home-page";
-import { Position, Route, Stop, Trip } from "./types";
-import { toNumber } from "./utils";
+import { Route, Stop, Trip } from "./types";
 import { formatInTimeZone } from "date-fns-tz";
 import { addHours, subHours } from "date-fns";
 function getMetlinkApiKey(): string {
@@ -69,18 +68,18 @@ function getStringParam(
   }
 }
 
-function getPositionFromSearchParams(
-  searchParams: SearchParams
-): Position | undefined {
-  const latitude = toNumber(getStringParam(searchParams, "lat"));
-  const longitude = toNumber(getStringParam(searchParams, "lon"));
-  if (latitude !== undefined && longitude !== undefined) {
-    return {
-      latitude,
-      longitude,
-    };
-  }
-}
+// function getPositionFromSearchParams(
+//   searchParams: SearchParams
+// ): Position | undefined {
+//   const latitude = toNumber(getStringParam(searchParams, "lat"));
+//   const longitude = toNumber(getStringParam(searchParams, "lon"));
+//   if (latitude !== undefined && longitude !== undefined) {
+//     return {
+//       latitude,
+//       longitude,
+//     };
+//   }
+// }
 
 function formatInNzIso(date: Date): string {
   return formatInTimeZone(date, "NZ", "yyyy-MM-dd'T'HH:mm:ss");

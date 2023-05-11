@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useState } from "react";
-import { Position, Route, Stop, Trip } from "./types";
+import { Route, Stop, Trip } from "./types";
 import TrainRoutes from "./train-routes";
 import {
   createPositionFromStrings,
