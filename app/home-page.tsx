@@ -8,7 +8,7 @@ import {
   removeDuplicateStops,
 } from "./utils";
 import Stops from "./stops";
-import { useRef } from 'react';
+import { useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 interface IProps {
   routes: Route[];
@@ -28,7 +28,7 @@ export default function HomePage({
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  
+
   const [locationStatus, setLocationStatus] = useState<string>(
     position ? "ok" : "init"
   );
@@ -69,8 +69,8 @@ export default function HomePage({
         </button>
         <div>
           <p className={`m-0 max-w-[30ch] text-sm opacity-90`}>
-            Latitude: {userCoords?.latitude} °, 
-            Longitude: {userCoords?.longitude} °
+            Latitude: {userCoords?.latitude} °, Longitude:{" "}
+            {userCoords?.longitude} °
           </p>
           {userCoords && (
             <Stops

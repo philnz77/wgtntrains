@@ -2,19 +2,19 @@
 import HomePage from "./home-page";
 import { Position, Route, Stop } from "./types";
 
-function getMetlinkApiKey() : string {
+function getMetlinkApiKey(): string {
   const apiKey = process.env.METLINK_API_KEY;
-  if(apiKey){
-    return apiKey
+  if (apiKey) {
+    return apiKey;
   }
-  throw "no METLINK_API_KEY env var"
+  throw "no METLINK_API_KEY env var";
 }
 
-function getMetlinkHeaders () {
+function getMetlinkHeaders() {
   return {
     "x-api-key": getMetlinkApiKey(),
-  }  
-};
+  };
+}
 
 async function getRoutes(): Promise<Route[]> {
   const res = await fetch(
