@@ -1,5 +1,5 @@
 import HomePage from "./home-page";
-import { Route, Stop, Trip } from "./types";
+import { Route, Stop, StopTime, Trip } from "./types";
 import { formatInTimeZone } from "date-fns-tz";
 import { addHours, subHours } from "date-fns";
 function getMetlinkApiKey(): string {
@@ -47,6 +47,15 @@ async function getRouteStops(
 ): Promise<{ route: Route; stops: Stop[] }> {
   const stops = await getStopsForRoute(route.route_id);
   return { route, stops };
+}
+
+async function getStopsTimesForTrip(tripId: string): Promise<StopTime[]> {
+  const res = await fetch(
+    `https://api.opendata.metlink.org.nz/v1/gtfs/stop_times?trip_id=${tripId}`,
+    { headers: getMetlinkHeaders() }
+  );
+  const stopTimes = await res.json();
+  return stopTimes;
 }
 
 // 1 are they closest to wellington station?
@@ -97,6 +106,13 @@ async function getTrips(routeId: string): Promise<Trip[]> {
   return trips;
 }
 
+async function getStopTimes(
+  trip: Trip
+): Promise<{ trip: Trip; stopTimes: StopTime[] }> {
+  const stopTimes = await getStopsTimesForTrip(trip.trip_id);
+  return { trip, stopTimes };
+}
+
 export default async function Page({
   searchParams,
 }: {
@@ -114,13 +130,14 @@ export default async function Page({
     route && routes.find((r) => r.route_short_name === route)?.route_id;
   //const position = getPositionFromSearchParams(searchParams);
   const trips = routeId ? await getTrips(routeId) : [];
-
+  const tripStopTimes = await Promise.all(trips.map(getStopTimes));
   return (
     <HomePage
       routes={routes}
       stops={stops}
       trainRoutes={trainRoutesStops}
       trips={trips}
+      tripStopTimes={tripStopTimes}
     />
   );
 }

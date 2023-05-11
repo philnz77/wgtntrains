@@ -32,3 +32,17 @@ export interface Trip {
   shape_id: string;
   direction_id: number;
 }
+
+export interface StopTime {
+  id: number;
+  trip_id: string;
+  arrival_time: string;
+  departure_time: string;
+  stop_id: string;
+  stop_sequence: number;
+  shape_dist_traveled: number;
+  stop_headsign: string;
+  pickup_type: number;
+  drop_off_type: number;
+  timepoint: string;
+}

@@ -1,7 +1,8 @@
 "use client";
 import { useCallback, useState } from "react";
-import { Route, Stop, Trip } from "./types";
+import { Route, Stop, StopTime, Trip } from "./types";
 import TrainRoutes from "./train-routes";
+import StopTimes from "./stop-times";
 import {
   createPositionFromStrings,
   filterCloseStops,
@@ -22,6 +23,7 @@ interface IProps {
   stops: Stop[];
   trainRoutes: { route: Route; stops: Stop[] }[];
   trips: Trip[];
+  tripStopTimes: { trip: Trip; stopTimes: StopTime[] }[];
 }
 
 function getParam(searchParams: ReadonlyURLSearchParams, key: string) {
@@ -36,6 +38,7 @@ export default function HomePage({
   stops,
   trainRoutes,
   trips,
+  tripStopTimes,
 }: IProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -104,6 +107,9 @@ export default function HomePage({
         />
       </div>
       <Trips trips={trips} />
+      {tripStopTimes.map(({ trip, stopTimes }) => (
+        <StopTimes trip={trip} stopTimes={stopTimes} />
+      ))}
     </main>
   );
 }
