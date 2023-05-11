@@ -17,17 +17,15 @@ export default function StopTimes({ trip, stopTimes }: IProps) {
           </tr>
         </thead>
         <tbody>
-          {stopTimes.map(
-            ({ trip_id, arrival_time, stop_id }) => {
-              return (
-                <tr key={trip_id}>
-                  <td>{trip_id}</td>
-                  <td>{arrival_time}</td>
-                  <td>{stop_id}</td>
-                </tr>
-              );
-            }
-          )}
+          {stopTimes.map(({ trip_id, arrival_time, stop_id }) => {
+            return (
+              <tr key={trip_id}>
+                <td>{trip_id}</td>
+                <td>{arrival_time}</td>
+                <td>{stop_id}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
