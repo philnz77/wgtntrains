@@ -1,6 +1,7 @@
 // Import your Client Component
 import HomePage from "./home-page";
 import { Position, Route, Stop } from "./types";
+import { toNumber } from "./utils";
 
 function getMetlinkApiKey(): string {
   const apiKey = process.env.METLINK_API_KEY;
@@ -67,24 +68,11 @@ function getStringParam(
   }
 }
 
-function getNumberParam(
-  searchParams: SearchParams,
-  key: string
-): number | undefined {
-  const val = getStringParam(searchParams, key);
-  if (val) {
-    const num = Number.parseFloat(val);
-    if (!Number.isNaN(num)) {
-      return num;
-    }
-  }
-}
-
 function getPositionFromSearchParams(
   searchParams: SearchParams
 ): Position | undefined {
-  const latitude = getNumberParam(searchParams, "lat");
-  const longitude = getNumberParam(searchParams, "lon");
+  const latitude = toNumber(getStringParam(searchParams, "lat"));
+  const longitude = toNumber(getStringParam(searchParams, "lon"));
   if (latitude !== undefined && longitude !== undefined) {
     return {
       latitude,
@@ -105,16 +93,14 @@ export default async function Page({
   const trainRoutes = routes.filter((route) => route.route_type === 2);
   const trainRoutesStops = await Promise.all(trainRoutes.map(getRouteStops));
   const stops = await stopsPromise;
-  const route = getStringParam(searchParams, "route");
-  const position = getPositionFromSearchParams(searchParams);
+  // const route = getStringParam(searchParams, "route");
+  // const position = getPositionFromSearchParams(searchParams);
 
   return (
     <HomePage
       routes={routes}
       stops={stops}
       trainRoutes={trainRoutesStops}
-      userRoute={route}
-      position={position}
     />
   );
 }

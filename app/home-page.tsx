@@ -3,34 +3,31 @@ import { useCallback, useState } from "react";
 import { Position, Route, Stop } from "./types";
 import TrainRoutes from "./train-routes";
 import {
+  createPositionFromStrings,
   filterCloseStops,
   getStopsDistances,
   removeDuplicateStops,
 } from "./utils";
 import Stops from "./stops";
-import { useRef } from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 interface IProps {
   routes: Route[];
   stops: Stop[];
   trainRoutes: { route: Route; stops: Stop[] }[];
-  userRoute?: string;
-  position?: Position;
 }
+
 
 export default function HomePage({
   routes,
   stops,
   trainRoutes,
-  userRoute,
-  position,
 }: IProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pathname = usePathname();
-
+  const userRoute =searchParams.get("route");
+  const userCoords = createPositionFromStrings(searchParams.get("lat"), searchParams.get("lon"));
   const [locationStatus, setLocationStatus] = useState<string>(
-    position ? "ok" : "init"
+    userCoords ? "ok" : "init"
   );
   const onUpdateLocationClicked = useCallback(() => {
     setLocationStatus("loading");
@@ -49,10 +46,9 @@ export default function HomePage({
         () => setLocationStatus("error")
       );
     }
-  }, [pathname, router, searchParams]);
+  }, [router]);
   const routesReport = `routes len: ${routes.length}`;
 
-  const userCoords = position;
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="relative flex place-items-center">
@@ -69,8 +65,8 @@ export default function HomePage({
         </button>
         <div>
           <p className={`m-0 max-w-[30ch] text-sm opacity-90`}>
-            Latitude: {userCoords?.latitude} °, Longitude:{" "}
-            {userCoords?.longitude} °
+            Latitude: {userCoords?.latitude} °, 
+            Longitude: {userCoords?.longitude} °
           </p>
           {userCoords && (
             <Stops
