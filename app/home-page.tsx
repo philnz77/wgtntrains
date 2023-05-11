@@ -15,6 +15,7 @@ import {
   useSearchParams,
 } from "next/navigation";
 import Trips from "./trips";
+import { urlWithOverriddenQueryParams } from "./browser-utils";
 
 interface IProps {
   routes: Route[];
@@ -29,6 +30,8 @@ function getParam(searchParams: ReadonlyURLSearchParams, key: string) {
     return result;
   }
 }
+
+
 export default function HomePage({
   routes,
   stops,
@@ -54,10 +57,10 @@ export default function HomePage({
         (position) => {
           const { coords } = position;
           setLocationStatus("ok");
-          const params = new URLSearchParams(window.location.search);
-          params.set("lat", String(coords.latitude));
-          params.set("lon", String(coords.longitude));
-          router.push(`${window.location.pathname}?${params}`);
+          router.push(urlWithOverriddenQueryParams({
+            lat: coords.latitude,
+            lon: coords.longitude
+          }));
         },
         () => setLocationStatus("error")
       );
