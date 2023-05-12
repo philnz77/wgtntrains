@@ -6,6 +6,7 @@ import StopTimes from "./stop-times";
 import {
   createPositionFromStrings,
   filterCloseStops,
+  getClosestStopOnRoute,
   getStopsDistances,
   removeDuplicateStops,
 } from "./utils";
@@ -72,6 +73,8 @@ export default function HomePage({
   }, [router]);
   const routesReport = `routes len: ${routes.length}`;
 
+  const closestStopOnRoute = getClosestStopOnRoute(trainRoutes, userCoords, userRoute)
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="relative flex place-items-center">
@@ -106,6 +109,10 @@ export default function HomePage({
           userRoute={userRoute}
         />
       </div>
+      {(closestStopOnRoute) && <div>
+        Closest stop is {closestStopOnRoute.stop.stop_name}, is {closestStopOnRoute.distanceKm} away
+      </div>}
+ 
       <Trips trips={trips} />
       {tripStopTimes.map(({ trip, stopTimes }) => (
         <StopTimes key={trip.trip_id} trip={trip} stopTimes={stopTimes} />

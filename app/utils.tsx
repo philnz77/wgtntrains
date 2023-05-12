@@ -1,5 +1,5 @@
 import { removeDuplicatesBy } from "./lang-utils";
-import { Position, Stop } from "./types";
+import { Position, Route, Stop } from "./types";
 
 export function deg2rad(deg: number): number {
   return deg * (Math.PI / 180);
@@ -97,5 +97,21 @@ export function createPositionFromStrings(
       latitude,
       longitude,
     };
+  }
+}
+
+export function getClosestStopOnRoute(
+  trainRoutes: { route: Route; stops: Stop[] }[],
+  userCoords?: Position,
+  userRoute?: string,
+) : { stop: Stop; distanceKm: number } | undefined {
+  if(userRoute && userCoords) {
+    const trainRoute = trainRoutes.find(({route}) => route.route_short_name === userRoute)
+    if (trainRoute) {
+      const stopsDistances = getStopsDistances(userCoords, trainRoute.stops);
+      const closest = stopsDistances
+        ?.sort(({ distanceKm }) => distanceKm)[0];
+      return closest
+    }
   }
 }
