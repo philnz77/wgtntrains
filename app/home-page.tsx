@@ -108,7 +108,7 @@ export default function HomePage({
       </div>
       <Trips trips={trips} />
       {tripStopTimes.map(({ trip, stopTimes }) => (
-        <StopTimes trip={trip} stopTimes={stopTimes} />
+        <StopTimes key={trip.trip_id} trip={trip} stopTimes={stopTimes} />
       ))}
     </main>
   );
