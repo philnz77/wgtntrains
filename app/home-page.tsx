@@ -7,11 +7,13 @@ import {
   createPositionFromStrings,
   getClosestStationOnRoute,
   getStationsDistances,
-  maybeGetStationCode,
+  toNumber,
 } from "./utils";
+import LinkToggle from "./link-toggle";
 import Stations from "./stations";
 import {
   ReadonlyURLSearchParams,
+  usePathname,
   useRouter,
   useSearchParams,
 } from "next/navigation";
@@ -41,8 +43,10 @@ export default function HomePage({
   tripStopTimes,
 }: IProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const userRoute = getParam(searchParams, "route");
+  const userDirection = toNumber(getParam(searchParams, "direction")) || 0;
   const userCoords = createPositionFromStrings(
     getParam(searchParams, "lat"),
     getParam(searchParams, "lon")
@@ -50,7 +54,6 @@ export default function HomePage({
   const [locationStatus, setLocationStatus] = useState<string>(
     userCoords ? "ok" : "init"
   );
-  
   const onUpdateLocationClicked = useCallback(() => {
     setLocationStatus("loading");
     if (!navigator.geolocation) {
@@ -74,7 +77,11 @@ export default function HomePage({
   const routesReport = `routes len: ${routes.length}`;
 
   const closestStationOnRoute = getClosestStationOnRoute(trainRoutes, userCoords, userRoute)
-
+  function toHref(key: string, value: string) {
+    const params = new URLSearchParams(searchParams);
+    params.set(key, value);
+    return `${pathname}?${params}`;
+  }
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="relative flex place-items-center">
@@ -112,6 +119,10 @@ export default function HomePage({
       {(closestStationOnRoute) && <div>
         Closest stop is {closestStationOnRoute.station.name}, is {closestStationOnRoute.distanceKm} away
       </div>}
+      <ul className="items-center w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg sm:flex dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+        <LinkToggle href={toHref("direction", "0")} last={false} selected={userDirection === 0}>Inbound</LinkToggle>
+        <LinkToggle href={toHref("direction", "1")} last={true} selected={userDirection === 1}>Outbound</LinkToggle>
+      </ul>
       <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">trips</h1>
       <Trips trips={trips} />
       <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">stop times</h1>

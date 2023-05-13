@@ -19,7 +19,7 @@ export default function Stations({ stationsDistances }: IProps) {
       </thead>
       <tbody>
         {stationsDistances.map(({ station, distanceKm }) => (
-          <tr key={station.id}>
+          <tr key={station.code}>
             <td>{station.name}</td>
             <td>{distanceKm}</td>
             <td>{station.stop_ids.join(',')}</td>
