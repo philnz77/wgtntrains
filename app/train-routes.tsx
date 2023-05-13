@@ -1,10 +1,10 @@
-import Stops from "./stops";
-import { Position, Route, Stop } from "./types";
-import { getStopsDistances } from "./utils";
+import Stations from "./stations";
+import { Position, Route, Station } from "./types";
 import Link from "next/link";
 import { useSearchParams, usePathname } from "next/navigation";
+import { getStationsDistances } from "./utils";
 interface IProps {
-  trainRoutes: { route: Route; stops: Stop[] }[];
+  trainRoutes: { route: Route; stations: Station[] }[];
   userCoords?: Position;
   userRoute?: string;
 }
@@ -16,26 +16,26 @@ export default function TrainRoutes({
 }: IProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const trainRoutesStopsDistances = trainRoutes.map((trainRoute) => {
-    const stopsDistances =
-      userCoords && getStopsDistances(userCoords, trainRoute.stops);
-    const closest = stopsDistances
+  const trainRoutesStationsDistances = trainRoutes.map((trainRoute) => {
+    const stationsDistances =
+      userCoords && getStationsDistances(userCoords, trainRoute.stations);
+    const closest = stationsDistances
       ?.map(({ distanceKm }) => distanceKm)
       .sort()[0];
     return {
       trainRoute,
-      stopsDistances,
+      stationsDistances: stationsDistances,
       closest,
     };
   });
-  const distanceToClosestStop = trainRoutesStopsDistances
+  const distanceToClosestStop = trainRoutesStationsDistances
     .map(({ closest }) => closest)
     .sort()[0];
   const limitKm = distanceToClosestStop && distanceToClosestStop + 1;
-  const trainRoutesClose = trainRoutesStopsDistances.map(
-    ({ trainRoute, stopsDistances }) => ({
+  const trainRoutesClose = trainRoutesStationsDistances.map(
+    ({ trainRoute, stationsDistances }) => ({
       trainRoute,
-      stopsDistances: stopsDistances?.filter(
+      stationsDistances: stationsDistances?.filter(
         ({ distanceKm }) => limitKm && distanceKm < limitKm
       ),
     })
@@ -47,6 +47,8 @@ export default function TrainRoutes({
   }
 
   return (
+    <div>
+      <div>Limit km {limitKm}</div>
     <table>
       <thead>
         <tr>
@@ -57,7 +59,7 @@ export default function TrainRoutes({
         </tr>
       </thead>
       <tbody>
-        {trainRoutesClose.map(({ trainRoute: { route }, stopsDistances }) => {
+        {trainRoutesClose.map(({ trainRoute: { route }, stationsDistances }) => {
           return (
             <tr
               key={route.id}
@@ -76,8 +78,8 @@ export default function TrainRoutes({
               <td>{route.route_long_name}</td>
               <td>{route.route_id}</td>
               <td>
-                {stopsDistances && stopsDistances.length > 0 && (
-                  <Stops stopsDistances={stopsDistances} />
+                {stationsDistances && stationsDistances.length > 0 && (
+                  <Stations stationsDistances={stationsDistances} />
                 )}
               </td>
             </tr>
@@ -85,5 +87,6 @@ export default function TrainRoutes({
         })}
       </tbody>
     </table>
+    </div>
   );
 }

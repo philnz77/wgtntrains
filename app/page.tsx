@@ -1,7 +1,9 @@
 import HomePage from "./home-page";
-import { Route, Stop, StopTime, Trip } from "./types";
+import { Route, Station, Stop, StopTime, Trip } from "./types";
 import { formatInTimeZone } from "date-fns-tz";
 import { addHours, subHours } from "date-fns";
+import { toStations } from "./utils";
+import pLimit from 'p-limit';
 function getMetlinkApiKey(): string {
   const apiKey = process.env.METLINK_API_KEY;
   if (apiKey) {
@@ -35,7 +37,7 @@ async function getStops(): Promise<Stop[]> {
 
 async function getStopsForRoute(routeId: string): Promise<Stop[]> {
   const res = await fetch(
-    `https://api.opendata.metlink.org.nz/v1/gtfs/stops?route_id=${routeId}`,
+    `https://api.opendata.metlink.org.nz/v1/gtfs/stops?route_id=${encodeURIComponent(routeId)}`,
     { headers: getMetlinkHeaders() }
   );
   const routes = await res.json();
@@ -44,14 +46,14 @@ async function getStopsForRoute(routeId: string): Promise<Stop[]> {
 
 async function getRouteStops(
   route: Route
-): Promise<{ route: Route; stops: Stop[] }> {
+): Promise<{ route: Route; stations: Station[] }> {
   const stops = await getStopsForRoute(route.route_id);
-  return { route, stops };
+  return { route, stations: toStations(stops) };
 }
 
 async function getStopsTimesForTrip(tripId: string): Promise<StopTime[]> {
   const res = await fetch(
-    `https://api.opendata.metlink.org.nz/v1/gtfs/stop_times?trip_id=${tripId}`,
+    `https://api.opendata.metlink.org.nz/v1/gtfs/stop_times?trip_id=${encodeURIComponent(tripId)}`,
     { headers: getMetlinkHeaders() }
   );
   const stopTimes = await res.json();
@@ -119,22 +121,24 @@ export default async function Page({
   searchParams: SearchParams;
 }) {
   // Fetch data directly in a Server Component
+  const limit = pLimit(5);
   const routesPromise = getRoutes();
   const stopsPromise = getStops();
   const routes = await routesPromise;
   const trainRoutes = routes.filter((route) => route.route_type === 2);
-  const trainRoutesStops = await Promise.all(trainRoutes.map(getRouteStops));
+  const trainRoutesStops = await Promise.all(trainRoutes.map(trainRoute => limit(() => getRouteStops(trainRoute))));
   const stops = await stopsPromise;
   const route = getStringParam(searchParams, "route");
   const routeId =
     route && routes.find((r) => r.route_short_name === route)?.route_id;
   //const position = getPositionFromSearchParams(searchParams);
   const trips = routeId ? await getTrips(routeId) : [];
-  const tripStopTimes = await Promise.all(trips.map(getStopTimes));
+  const tripStopTimes = await Promise.all(trips.map(trip => limit(() => getStopTimes(trip))));
+  const stations = toStations(stops)
   return (
     <HomePage
       routes={routes}
-      stops={stops}
+      stations={stations}
       trainRoutes={trainRoutesStops}
       trips={trips}
       tripStopTimes={tripStopTimes}

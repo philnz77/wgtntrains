@@ -1,4 +1,4 @@
-export function urlWithOverriddenQueryParams(paramsObj: {}): string {
+export function urlWithOverriddenQueryParams(paramsObj: object): string {
   const params = new URLSearchParams(window.location.search);
   for (const [key, value] of Object.entries(paramsObj)) {
     params.set(key, String(value));

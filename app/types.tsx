@@ -21,6 +21,15 @@ export interface Stop {
   parent_station: string;
 }
 
+export interface Station {
+  id: number;
+  code: string;
+  stop_ids: string[];
+  name: string;
+  zone_id: string;
+  position: Position
+}
+
 export interface Position {
   latitude: number;
   longitude: number;

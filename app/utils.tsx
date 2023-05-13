@@ -1,5 +1,4 @@
-import { removeDuplicatesBy } from "./lang-utils";
-import { Position, Route, Stop } from "./types";
+import { Position, Route, Station, Stop } from "./types";
 
 export function deg2rad(deg: number): number {
   return deg * (Math.PI / 180);
@@ -50,29 +49,57 @@ export function filterCloseStops(
   return stopsExt.slice(0, limit).map((ext) => ext.stop);
 }
 
-export const removeDuplicateStops = (stops: Stop[]) =>
-  removeDuplicatesBy(stops, (stop) => stop.parent_station || stop.stop_code);
+export const getStationCode = (stop: Stop) => stop.parent_station || stop.stop_code;
+export const maybeGetStationCode = (stop?: Stop) => stop && getStationCode(stop);
+
+export function toStations(stops: Stop[]) : Station[]{
+  const stations: Station[] = [];
+  const parentToStation = new Map<string, Station>()
+  stops.forEach((stop) => {
+    const {parent_station} = stop
+    let station = parent_station && parentToStation.get(parent_station);
+    if (station) {
+      station.stop_ids.push(stop.stop_id) 
+    } else {
+      station = {
+        id: stop.id,
+        code: getStationCode(stop),
+        stop_ids: [stop.stop_id],
+        name: stop.stop_name,
+        zone_id: stop.zone_id,
+        position: {
+          latitude: stop.stop_lat,
+          longitude: stop.stop_lon  
+        }
+      }
+      if(parent_station) {
+        parentToStation.set(parent_station, station)
+      }
+      stations.push(station);
+    }
+  })
+  return stations;
+}  
 
 export function getDistanceToStopInKm(
   userCoords: Position,
-  stop: Stop
+  station: Station
 ): number {
   return getDistanceFromLatLonInKm(
     userCoords.latitude,
     userCoords.longitude,
-    stop.stop_lat,
-    stop.stop_lon
+    station.position.latitude,
+    station.position.longitude
   );
 }
 
-export function getStopsDistances(
+export function getStationsDistances(
   userCoords: Position,
-  stops: Stop[]
-): { stop: Stop; distanceKm: number }[] {
-  return removeDuplicateStops(stops)
-    .map((stop) => ({
-      stop,
-      distanceKm: getDistanceToStopInKm(userCoords, stop),
+  stations: Station[]
+): { station: Station; distanceKm: number }[] {
+  return stations.map((station) => ({
+      station,
+      distanceKm: getDistanceToStopInKm(userCoords, station),
     }))
     .sort((a, b) => a.distanceKm - b.distanceKm);
 }
@@ -100,16 +127,16 @@ export function createPositionFromStrings(
   }
 }
 
-export function getClosestStopOnRoute(
-  trainRoutes: { route: Route; stops: Stop[] }[],
+export function getClosestStationOnRoute(
+  trainRoutes: { route: Route; stations: Station[] }[],
   userCoords?: Position,
   userRoute?: string,
-) : { stop: Stop; distanceKm: number } | undefined {
+) : { station: Station; distanceKm: number } | undefined {
   if(userRoute && userCoords) {
     const trainRoute = trainRoutes.find(({route}) => route.route_short_name === userRoute)
     if (trainRoute) {
-      const stopsDistances = getStopsDistances(userCoords, trainRoute.stops);
-      const closest = stopsDistances
+      const stationsDistances = getStationsDistances(userCoords, trainRoute.stations);
+      const closest = stationsDistances
         ?.sort(({ distanceKm }) => distanceKm)[0];
       return closest
     }

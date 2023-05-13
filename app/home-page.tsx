@@ -1,16 +1,15 @@
 "use client";
 import { useCallback, useState } from "react";
-import { Route, Stop, StopTime, Trip } from "./types";
+import { Route, Station, StopTime, Trip } from "./types";
 import TrainRoutes from "./train-routes";
 import StopTimes from "./stop-times";
 import {
   createPositionFromStrings,
-  filterCloseStops,
-  getClosestStopOnRoute,
-  getStopsDistances,
-  removeDuplicateStops,
+  getClosestStationOnRoute,
+  getStationsDistances,
+  maybeGetStationCode,
 } from "./utils";
-import Stops from "./stops";
+import Stations from "./stations";
 import {
   ReadonlyURLSearchParams,
   useRouter,
@@ -21,8 +20,8 @@ import { urlWithOverriddenQueryParams } from "./browser-utils";
 
 interface IProps {
   routes: Route[];
-  stops: Stop[];
-  trainRoutes: { route: Route; stops: Stop[] }[];
+  stations: Station[];
+  trainRoutes: { route: Route; stations: Station[] }[];
   trips: Trip[];
   tripStopTimes: { trip: Trip; stopTimes: StopTime[] }[];
 }
@@ -36,7 +35,7 @@ function getParam(searchParams: ReadonlyURLSearchParams, key: string) {
 
 export default function HomePage({
   routes,
-  stops,
+  stations,
   trainRoutes,
   trips,
   tripStopTimes,
@@ -51,6 +50,7 @@ export default function HomePage({
   const [locationStatus, setLocationStatus] = useState<string>(
     userCoords ? "ok" : "init"
   );
+  
   const onUpdateLocationClicked = useCallback(() => {
     setLocationStatus("loading");
     if (!navigator.geolocation) {
@@ -73,7 +73,7 @@ export default function HomePage({
   }, [router]);
   const routesReport = `routes len: ${routes.length}`;
 
-  const closestStopOnRoute = getClosestStopOnRoute(trainRoutes, userCoords, userRoute)
+  const closestStationOnRoute = getClosestStationOnRoute(trainRoutes, userCoords, userRoute)
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -95,11 +95,11 @@ export default function HomePage({
             {userCoords?.longitude} °
           </p>
           {userCoords && (
-            <Stops
-              stopsDistances={getStopsDistances(
+            <Stations
+              stationsDistances={getStationsDistances(
                 userCoords,
-                filterCloseStops(userCoords, removeDuplicateStops(stops), 5)
-              )}
+                stations
+              ).slice(0,5)}
             />
           )}
         </div>
@@ -109,13 +109,14 @@ export default function HomePage({
           userRoute={userRoute}
         />
       </div>
-      {(closestStopOnRoute) && <div>
-        Closest stop is {closestStopOnRoute.stop.stop_name}, is {closestStopOnRoute.distanceKm} away
+      {(closestStationOnRoute) && <div>
+        Closest stop is {closestStationOnRoute.station.name}, is {closestStationOnRoute.distanceKm} away
       </div>}
- 
+      <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">trips</h1>
       <Trips trips={trips} />
+      <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">stop times</h1>
       {tripStopTimes.map(({ trip, stopTimes }) => (
-        <StopTimes key={trip.trip_id} trip={trip} stopTimes={stopTimes} />
+        <StopTimes key={trip.trip_id} trip={trip} stopTimes={stopTimes} userStation={closestStationOnRoute?.station}/>
       ))}
     </main>
   );
