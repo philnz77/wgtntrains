@@ -142,3 +142,5 @@ export function getClosestStationOnRoute(
     }
   }
 }
+
+export const defaultDirection = 0;

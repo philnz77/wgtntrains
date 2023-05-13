@@ -2,7 +2,7 @@ import HomePage from "./home-page";
 import { Route, Station, Stop, StopTime, Trip } from "./types";
 import { formatInTimeZone } from "date-fns-tz";
 import { addHours, subHours } from "date-fns";
-import { toStations } from "./utils";
+import { defaultDirection, toNumber, toStations } from "./utils";
 import pLimit from 'p-limit';
 function getMetlinkApiKey(): string {
   const apiKey = process.env.METLINK_API_KEY;
@@ -99,7 +99,7 @@ async function getTrips(routeId: string): Promise<Trip[]> {
   const now = new Date();
   const earlier = subHours(now, 3);
   const later = addHours(now, 1);
-  const tripsUrl = `https://api.opendata.metlink.org.nz/v1/gtfs/trips?route_id=${routeId}&start=${formatInNzIso(
+  const tripsUrl = `https://api.opendata.metlink.org.nz/v1/gtfs/trips?route_id=${encodeURIComponent(routeId)}&start=${formatInNzIso(
     earlier
   )}&end=${formatInNzIso(later)}`;
 
@@ -120,7 +120,6 @@ export default async function Page({
 }: {
   searchParams: SearchParams;
 }) {
-  // Fetch data directly in a Server Component
   const limit = pLimit(5);
   const routesPromise = getRoutes();
   const stopsPromise = getStops();
@@ -129,10 +128,12 @@ export default async function Page({
   const trainRoutesStops = await Promise.all(trainRoutes.map(trainRoute => limit(() => getRouteStops(trainRoute))));
   const stops = await stopsPromise;
   const route = getStringParam(searchParams, "route");
+  const userDirection = toNumber(getStringParam(searchParams, "direction")) || defaultDirection;
   const routeId =
     route && routes.find((r) => r.route_short_name === route)?.route_id;
   //const position = getPositionFromSearchParams(searchParams);
-  const trips = routeId ? await getTrips(routeId) : [];
+  const tripsAll = routeId ? await getTrips(routeId) : [];
+  const trips = tripsAll.filter(trip => trip.direction_id === userDirection)
   const tripStopTimes = await Promise.all(trips.map(trip => limit(() => getStopTimes(trip))));
   const stations = toStations(stops)
   return (
