@@ -1,4 +1,6 @@
+import { formatInTimeZone, zonedTimeToUtc } from "date-fns-tz";
 import { Position, Route, Station, Stop } from "./types";
+import { addHours } from "date-fns";
 
 export function deg2rad(deg: number): number {
   return deg * (Math.PI / 180);
@@ -113,6 +115,14 @@ export function toNumber(str?: string | null): number | undefined {
   }
 }
 
+export function toNumberOrThrow(str: string): number {
+  const num = Number.parseFloat(str);
+  if (Number.isNaN(num)) {
+      throw `expected number, found ${str}`
+  }
+  return num;
+}
+
 export function createPositionFromStrings(
   lat?: string | null,
   lon?: string | null
@@ -144,3 +154,21 @@ export function getClosestStationOnRoute(
 }
 
 export const defaultDirection = 0;
+
+export const nzTimezone = "NZ"
+
+export function formatInNzIso(date: Date): string {
+  return formatInTimeZone(date, nzTimezone, "yyyy-MM-dd'T'HH:mm:ss");
+}
+
+export function getTripStopTimeDate(tripDate: string, stopArrivalTime: string): Date {
+  const [hour, ...restTime] = stopArrivalTime.split(":")
+  const hourNum = toNumberOrThrow(hour);
+  if (hourNum < 24) {
+    return zonedTimeToUtc(`${tripDate}T${stopArrivalTime}`, nzTimezone)
+  } else {
+    const hoursInMorning = hourNum - 24
+    const elevenPM = zonedTimeToUtc(`${tripDate}T23:${restTime.join(":")}`, nzTimezone)
+    return addHours(elevenPM, 1 + hoursInMorning)
+  }
+}

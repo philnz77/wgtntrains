@@ -40,6 +40,7 @@ export interface Trip {
   route_id: number;
   shape_id: string;
   direction_id: number;
+  date: string
 }
 
 export interface StopTime {
@@ -54,4 +55,5 @@ export interface StopTime {
   pickup_type: number;
   drop_off_type: number;
   timepoint: string;
+  dateTime: Date
 }

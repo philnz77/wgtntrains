@@ -2,8 +2,9 @@ import HomePage from "./home-page";
 import { Route, Station, Stop, StopTime, Trip } from "./types";
 import { formatInTimeZone } from "date-fns-tz";
 import { addHours, subHours } from "date-fns";
-import { defaultDirection, toNumber, toStations } from "./utils";
+import { defaultDirection, formatInNzIso, getTripStopTimeDate, nzTimezone, toNumber, toStations } from "./utils";
 import pLimit from 'p-limit';
+import { last } from "./lang-util";
 function getMetlinkApiKey(): string {
   const apiKey = process.env.METLINK_API_KEY;
   if (apiKey) {
@@ -51,7 +52,22 @@ async function getRouteStops(
   return { route, stations: toStations(stops) };
 }
 
-async function getStopsTimesForTrip(tripId: string): Promise<StopTime[]> {
+export interface StopTimeRaw {
+  id: number;
+  trip_id: string;
+  arrival_time: string;
+  departure_time: string;
+  stop_id: string;
+  stop_sequence: number;
+  shape_dist_traveled: number;
+  stop_headsign: string;
+  pickup_type: number;
+  drop_off_type: number;
+  timepoint: string;
+}
+
+
+async function getStopsTimesForTrip(tripId: string): Promise<StopTimeRaw[]> {
   const res = await fetch(
     `https://api.opendata.metlink.org.nz/v1/gtfs/stop_times?trip_id=${encodeURIComponent(tripId)}`,
     { headers: getMetlinkHeaders() }
@@ -91,14 +107,7 @@ function getStringParam(
 //   }
 // }
 
-function formatInNzIso(date: Date): string {
-  return formatInTimeZone(date, "NZ", "yyyy-MM-dd'T'HH:mm:ss");
-}
-
-async function getTrips(routeId: string): Promise<Trip[]> {
-  const now = new Date();
-  const earlier = subHours(now, 3);
-  const later = addHours(now, 1);
+async function getTrips(routeId: string, earlier: Date, later: Date): Promise<Trip[]> {
   const tripsUrl = `https://api.opendata.metlink.org.nz/v1/gtfs/trips?route_id=${encodeURIComponent(routeId)}&start=${formatInNzIso(
     earlier
   )}&end=${formatInNzIso(later)}`;
@@ -108,11 +117,19 @@ async function getTrips(routeId: string): Promise<Trip[]> {
   return trips;
 }
 
+function toStopTime(trip: Trip, raw: StopTimeRaw): StopTime {
+  return {
+    ...raw, 
+    dateTime: getTripStopTimeDate(trip.date, raw.arrival_time)
+  }
+}
+
 async function getStopTimes(
-  trip: Trip
+  trip: Trip,
+  earlier: Date
 ): Promise<{ trip: Trip; stopTimes: StopTime[] }> {
-  const stopTimes = await getStopsTimesForTrip(trip.trip_id);
-  return { trip, stopTimes };
+  const stopTimesRaw = await getStopsTimesForTrip(trip.trip_id);
+  return { trip, stopTimes: stopTimesRaw.map(raw => toStopTime(trip, raw)) };
 }
 
 export default async function Page({
@@ -132,9 +149,13 @@ export default async function Page({
   const routeId =
     route && routes.find((r) => r.route_short_name === route)?.route_id;
   //const position = getPositionFromSearchParams(searchParams);
-  const tripsAll = routeId ? await getTrips(routeId) : [];
+  const now = new Date();
+  const earlier = subHours(now, 3);
+  const later = addHours(now, 1);
+  const tripsAll = routeId ? await getTrips(routeId, earlier, later) : [];
   const trips = tripsAll.filter(trip => trip.direction_id === userDirection)
-  const tripStopTimes = await Promise.all(trips.map(trip => limit(() => getStopTimes(trip))));
+  const tripStopTimesAll = await Promise.all(trips.map(trip => limit(() => getStopTimes(trip, earlier))));
+  const tripStopTimes = tripStopTimesAll.filter(({stopTimes}) => last(stopTimes).dateTime > now)
   const stations = toStations(stops)
   return (
     <HomePage
@@ -146,3 +167,4 @@ export default async function Page({
     />
   );
 }
+
