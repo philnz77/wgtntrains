@@ -1,8 +1,7 @@
 import HomePage from "./home-page";
 import { Route, Station, Stop, StopTime, Trip } from "./types";
-import { formatInTimeZone } from "date-fns-tz";
 import { addHours, subHours } from "date-fns";
-import { defaultDirection, formatInNzIso, getTripStopTimeDate, nzTimezone, toNumber, toStations } from "./utils";
+import { defaultDirection, formatInNzIso, getTripStopTimeDate, toNumber, toStations } from "./utils";
 import pLimit from 'p-limit';
 import { last } from "./lang-util";
 function getMetlinkApiKey(): string {
@@ -118,15 +117,16 @@ async function getTrips(routeId: string, earlier: Date, later: Date): Promise<Tr
 }
 
 function toStopTime(trip: Trip, raw: StopTimeRaw): StopTime {
+  const dateTime = getTripStopTimeDate(trip.date, raw.arrival_time)
+
   return {
     ...raw, 
-    dateTime: getTripStopTimeDate(trip.date, raw.arrival_time)
+    dateTime
   }
 }
 
 async function getStopTimes(
   trip: Trip,
-  earlier: Date
 ): Promise<{ trip: Trip; stopTimes: StopTime[] }> {
   const stopTimesRaw = await getStopsTimesForTrip(trip.trip_id);
   return { trip, stopTimes: stopTimesRaw.map(raw => toStopTime(trip, raw)) };
@@ -137,34 +137,39 @@ export default async function Page({
 }: {
   searchParams: SearchParams;
 }) {
-  const limit = pLimit(5);
-  const routesPromise = getRoutes();
-  const stopsPromise = getStops();
-  const routes = await routesPromise;
-  const trainRoutes = routes.filter((route) => route.route_type === 2);
-  const trainRoutesStops = await Promise.all(trainRoutes.map(trainRoute => limit(() => getRouteStops(trainRoute))));
-  const stops = await stopsPromise;
-  const route = getStringParam(searchParams, "route");
-  const userDirection = toNumber(getStringParam(searchParams, "direction")) || defaultDirection;
-  const routeId =
-    route && routes.find((r) => r.route_short_name === route)?.route_id;
-  //const position = getPositionFromSearchParams(searchParams);
-  const now = new Date();
-  const earlier = subHours(now, 3);
-  const later = addHours(now, 1);
-  const tripsAll = routeId ? await getTrips(routeId, earlier, later) : [];
-  const trips = tripsAll.filter(trip => trip.direction_id === userDirection)
-  const tripStopTimesAll = await Promise.all(trips.map(trip => limit(() => getStopTimes(trip, earlier))));
-  const tripStopTimes = tripStopTimesAll.filter(({stopTimes}) => last(stopTimes).dateTime > now)
-  const stations = toStations(stops)
-  return (
-    <HomePage
-      routes={routes}
-      stations={stations}
-      trainRoutes={trainRoutesStops}
-      trips={trips}
-      tripStopTimes={tripStopTimes}
-    />
-  );
+  try{
+    const limit = pLimit(5);
+    const routesPromise = getRoutes();
+    const stopsPromise = getStops();
+    const routes = await routesPromise;
+    const trainRoutes = routes.filter((route) => route.route_type === 2);
+    const trainRoutesStops = await Promise.all(trainRoutes.map(trainRoute => limit(() => getRouteStops(trainRoute))));
+    const stops = await stopsPromise;
+    const route = getStringParam(searchParams, "route");
+    const userDirection = toNumber(getStringParam(searchParams, "direction")) || defaultDirection;
+    const routeId =
+      route && routes.find((r) => r.route_short_name === route)?.route_id;
+    //const position = getPositionFromSearchParams(searchParams);
+    const now = new Date();
+    const earlier = subHours(now, 3);
+    const later = addHours(now, 1);
+    const tripsAll = routeId ? await getTrips(routeId, earlier, later) : [];
+    const trips = tripsAll.filter(trip => trip.direction_id === userDirection)
+    const tripStopTimesAll = await Promise.all(trips.map(trip => limit(() => getStopTimes(trip))));
+    const tripStopTimes = tripStopTimesAll.filter(({stopTimes}) => last(stopTimes).dateTime > now)
+    const stations = toStations(stops)
+    return (
+      <HomePage
+        routes={routes}
+        stations={stations}
+        trainRoutes={trainRoutesStops}
+        trips={trips}
+        tripStopTimes={tripStopTimes}
+      />
+    );  
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
 }
 

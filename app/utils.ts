@@ -1,6 +1,6 @@
-import { formatInTimeZone, zonedTimeToUtc } from "date-fns-tz";
+import { formatInTimeZone, utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import { Position, Route, Station, Stop } from "./types";
-import { addHours } from "date-fns";
+import { addHours, isSameDay } from "date-fns";
 
 export function deg2rad(deg: number): number {
   return deg * (Math.PI / 180);
@@ -157,8 +157,16 @@ export const defaultDirection = 0;
 
 export const nzTimezone = "NZ"
 
+export function formatInNZTimezone(date: Date, format: string): string {
+  return formatInTimeZone(date, nzTimezone, format);
+}
+
 export function formatInNzIso(date: Date): string {
-  return formatInTimeZone(date, nzTimezone, "yyyy-MM-dd'T'HH:mm:ss");
+  return formatInNZTimezone(date, "yyyy-MM-dd'T'HH:mm:ss");
+}
+
+export function isSameNzDay(date1: Date, date2: Date): boolean {
+  return isSameDay(utcToZonedTime(date1, nzTimezone), utcToZonedTime(date2, nzTimezone))
 }
 
 export function getTripStopTimeDate(tripDate: string, stopArrivalTime: string): Date {
