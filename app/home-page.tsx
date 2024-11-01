@@ -79,7 +79,7 @@ export default function HomePage({
 
   const closestStationOnRoute = getClosestStationOnRoute(trainRoutes, userCoords, userRoute)
   function toHref(key: string, value: string) {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     params.set(key, value);
     return `${pathname}?${params}`;
   }
