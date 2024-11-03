@@ -79,7 +79,7 @@ async function getStopsTimesForTrip(tripId: string): Promise<StopTimeRaw[]> {
 // 1.1 yes
 // if they want trains, show wgtn obviously!!
 // 1.2 no
-interface SearchParams {
+type SearchParams = {
   [key: string]: string | string[] | undefined;
 }
 
@@ -135,9 +135,10 @@ async function getStopTimes(
 export default async function Page({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
   try{
+    const _searchParams = await searchParams
     const limit = pLimit(5);
     const routesPromise = getRoutes();
     const stopsPromise = getStops();
@@ -145,8 +146,8 @@ export default async function Page({
     const trainRoutes = routes.filter((route) => route.route_type === 2);
     const trainRoutesStops = await Promise.all(trainRoutes.map(trainRoute => limit(() => getRouteStops(trainRoute))));
     const stops = await stopsPromise;
-    const route = getStringParam(searchParams, "route");
-    const userDirection = toNumber(getStringParam(searchParams, "direction")) || defaultDirection;
+    const route = getStringParam(_searchParams, "route");
+    const userDirection = toNumber(getStringParam(_searchParams, "direction")) || defaultDirection;
     const routeId =
       route && routes.find((r) => r.route_short_name === route)?.route_id;
     //const position = getPositionFromSearchParams(searchParams);
