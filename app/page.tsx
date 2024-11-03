@@ -4,6 +4,9 @@ import { addHours, subHours } from "date-fns";
 import { defaultDirection, formatInNzIso, getTripStopTimeDate, toNumber, toStations } from "./utils";
 import pLimit from 'p-limit';
 import { last } from "./lang-util";
+
+export const dynamic = 'force-dynamic';
+
 function getMetlinkApiKey(): string {
   const apiKey = process.env.METLINK_API_KEY;
   if (apiKey) {
